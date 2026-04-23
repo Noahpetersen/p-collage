@@ -8,7 +8,17 @@ const W = A4.width - PAD * 2;
 const H = A4.height - PAD * 2;
 
 function slot(id: string, x: number, y: number, w: number, h: number): LayoutSlot {
-  return { id, x, y, width: w, height: h, imageId: null, cornerRadius: CORNER };
+  return {
+    id,
+    x,
+    y,
+    width: w,
+    height: h,
+    imageId: null,
+    cornerRadius: CORNER,
+    cropX: 0.5,
+    cropY: 0.5,
+  };
 }
 
 export function makeGrid(cols: number, rows: number, id: string, name: string): Template {

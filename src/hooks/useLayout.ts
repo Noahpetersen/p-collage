@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { LayoutSlot, Template } from '../types';
 
 function withDefaults(slots: LayoutSlot[]): LayoutSlot[] {
-  return slots.map(s => ({ cropX: 0.5, cropY: 0.5, ...s }));
+  return slots.map(s => ({ ...s, cropX: s.cropX ?? 0.5, cropY: s.cropY ?? 0.5 }));
 }
 
 export function useLayout(defaultTemplate: Template) {

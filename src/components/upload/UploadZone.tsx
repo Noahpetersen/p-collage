@@ -25,10 +25,9 @@ interface UploadZoneProps {
   images: UploadedImage[];
   onFiles: (files: FileList | File[]) => void;
   onRemove: (id: string) => void;
-  onClose: () => void;
 }
 
-export default function UploadZone({ images, onFiles, onRemove, onClose }: UploadZoneProps) {
+export default function UploadZone({ images, onFiles, onRemove }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [loadingSamples, setLoadingSamples] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);

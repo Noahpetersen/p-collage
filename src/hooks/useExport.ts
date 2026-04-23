@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, createElement } from 'react';
 import { pdf } from '@react-pdf/renderer';
-import { createElement } from 'react';
 import PdfDocument from '../components/export/PdfDocument';
 import type { LayoutSlot, UploadedImage, CanvasDecoration, FreeImage } from '../types';
 import { getCoverCrop } from '../utils/cropMath';
@@ -136,13 +135,13 @@ export function useExport() {
       ]);
 
       const blob = await pdf(
-        createElement(PdfDocument, {
+        createElement(PdfDocument as any, {
           bgColor,
           bgImageUrl: resolvedBgImageUrl,
           photoSlots,
           freePhotos,
           decorations: resolvedDecorations,
-        })
+        }) as any
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
