@@ -64,7 +64,7 @@ export default function UploadZone({ images, onFiles, onRemove, onClose }: Uploa
 
   return (
     <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 w-72">
-      <div className="rounded-2xl bg-gray-900/90 backdrop-blur-md border border-white/10 shadow-2xl overflow-hidden">
+      <div className="rounded-2xl bg-white border border-gray-200 shadow-lg overflow-hidden">
         {/* Drop zone */}
         <div
           onClick={() => inputRef.current?.click()}
@@ -74,14 +74,14 @@ export default function UploadZone({ images, onFiles, onRemove, onClose }: Uploa
           className={`
             cursor-pointer m-2 rounded-xl border-2 border-dashed transition-colors
             flex flex-col items-center justify-center gap-2 h-32
-            ${isDragging ? 'border-white/70 bg-white/10' : 'border-white/20 hover:border-white/40'}
+            ${isDragging ? 'border-gray-500 bg-gray-50' : 'border-gray-300 hover:border-gray-400'}
           `}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 text-white/40">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 text-gray-400">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
-          <p className="text-white/40 text-xs text-center">
-            Drop photos or <span className="text-white/70 underline">browse</span>
+          <p className="text-gray-400 text-xs text-center">
+            Drop photos or <span className="text-gray-600 underline">browse</span>
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export default function UploadZone({ images, onFiles, onRemove, onClose }: Uploa
           <button
             onClick={handleLoadSamples}
             disabled={loadingSamples}
-            className="mx-2 mb-2 w-[calc(100%-1rem)] py-1.5 rounded-lg text-xs text-white/50 hover:text-white/80 border border-white/10 hover:border-white/20 transition-colors disabled:opacity-40"
+            className="mx-2 mb-2 w-[calc(100%-1rem)] py-1.5 rounded-lg text-xs text-gray-400 hover:text-gray-700 border border-gray-200 hover:border-gray-300 transition-colors disabled:opacity-40"
           >
             {loadingSamples ? 'Loading…' : 'DEV: load sample images'}
           </button>
@@ -106,7 +106,7 @@ export default function UploadZone({ images, onFiles, onRemove, onClose }: Uploa
                   e.dataTransfer.setData('imageId', img.id);
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
-                className="relative aspect-square overflow-hidden rounded-lg bg-black/20 group cursor-grab"
+                className="relative aspect-square overflow-hidden rounded-lg bg-gray-100 group cursor-grab"
               >
                 <img src={img.url} alt={img.name} draggable={false} className="w-full h-full object-cover pointer-events-none" />
                 <button

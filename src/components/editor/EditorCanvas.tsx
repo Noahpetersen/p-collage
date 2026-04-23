@@ -127,8 +127,8 @@ export default function EditorCanvas({
                   y={slot.y}
                   width={slot.width}
                   height={slot.height}
-                  fill="#f3f4f6"
-                  stroke="#d1d5db"
+                  fill="oklch(0.93 0.016 160)"
+                  stroke="oklch(0.72 0.06 160)"
                   strokeWidth={1}
                   dash={[6, 4]}
                   cornerRadius={slot.cornerRadius ?? 0}

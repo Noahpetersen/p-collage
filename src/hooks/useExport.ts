@@ -87,6 +87,7 @@ export function useExport() {
     bgImageUrl: string | null,
     decorations: CanvasDecoration[],
     freeImages: FreeImage[],
+    fileName = 'photo-book',
   ) {
     setExporting(true);
     try {
@@ -147,7 +148,7 @@ export function useExport() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'photo-book.pdf';
+      a.download = `${fileName.trim() || 'photo-book'}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
