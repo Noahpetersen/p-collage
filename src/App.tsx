@@ -4,7 +4,7 @@ import Navbar from './components/ui/Navbar';
 import SidePanel from './components/ui/SidePanel';
 import ExportModal from './components/ui/ExportModal';
 import TitleInput from './components/ui/TitleInput';
-import PollenLogo from './assets/PollenLogo.png';
+import CloverLogo from './assets/PollenLogo.png';
 import { useImages } from './hooks/useImages';
 import { useLayout } from './hooks/useLayout';
 import { useExport } from './hooks/useExport';
@@ -73,11 +73,11 @@ function App() {
       <TitleInput value={fileName} onChange={setFileName} />
       <div className="fixed top-5 left-5 z-40">
         <div
-          className="flex items-center gap-2.5 px-4 py-3 rounded-2xl border"
+          className="flex items-center gap-2.5 pl-4 pr-6 py-3 rounded-2xl border"
           style={{ background: 'var(--glass)', borderColor: 'var(--glass-border)', boxShadow: 'var(--shadow-soft)' }}
         >
-          <img src={PollenLogo} alt="Pollen" className="h-7 w-auto" />
-          <span className="text-[20px] font-semibold font-display tracking-[-0.02em] text-ink">Pollen</span>
+          <img src={CloverLogo} alt="Clover" className="h-7 w-auto" />
+          <span className="text-[20px] font-semibold font-display tracking-[-0.02em] text-ink">Clover</span>
         </div>
       </div>
       <EditorCanvas

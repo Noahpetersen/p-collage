@@ -40,7 +40,7 @@ async function fetchSampleFiles(): Promise<File[]> {
   return results;
 }
 
-type TabId = 'layouts' | 'photos' | 'background' | 'stickers';
+type TabId = 'layouts' | 'photos' | 'background' | 'text' | 'stickers';
 
 const TABS: { id: TabId; label: string; description: string; icon: React.ReactNode }[] = [
   {
@@ -70,6 +70,17 @@ const TABS: { id: TabId; label: string; description: string; icon: React.ReactNo
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'text',
+    label: 'Text',
+    description: 'Add labels and captions to your page.',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 15v6m-1.5-1.5L17 21l1.5-1.5" />
       </svg>
     ),
   },
@@ -393,6 +404,16 @@ export default function SidePanel({
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Text tab */}
+        {tab === 'text' && (
+          <div className="overflow-y-auto flex-1 p-4 flex flex-col items-center justify-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-ink-soft">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            <p className="text-ink-soft text-sm font-sans text-center">Text elements coming soon</p>
           </div>
         )}
 

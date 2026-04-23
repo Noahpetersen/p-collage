@@ -37,6 +37,21 @@ export interface FreeImage {
   cropY: number;
 }
 
+export interface CanvasText {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  fontFamily: string;
+  fontSize: number;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  align: 'left' | 'center' | 'right';
+  color: string;
+  width: number;
+}
+
 export interface Template {
   id: string;
   name: string;
