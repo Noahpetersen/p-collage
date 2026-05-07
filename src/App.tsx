@@ -10,6 +10,7 @@ import { useLayout } from './hooks/useLayout';
 import { useExport } from './hooks/useExport';
 import { useDecorations } from './hooks/useDecorations';
 import { useFreeLayout } from './hooks/useFreeLayout';
+import { useTexts } from './hooks/useTexts';
 import { templates } from './templates';
 import type { Template } from './types';
 import { useState } from 'react';
@@ -37,6 +38,8 @@ function App() {
   const { exportPdf, exporting } = useExport();
   const { decorations, addDecoration, moveDecoration, removeDecoration, resizeDecoration } = useDecorations();
   const { freeImages, addFreeImage, moveFreeImage, resizeFreeImage, updateCrop: updateFreeImageCrop, removeFreeImage, clearFreeImages } = useFreeLayout();
+  const { texts, addText, moveText, updateText, removeText } = useTexts();
+  const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
 
   function handleSelectTemplate(t: Template) {
     setFreeMode(false);
@@ -69,16 +72,21 @@ function App() {
         images={images}
         onFiles={handleFiles}
         onRemoveImage={removeImage}
+        selectedText={texts.find(t => t.id === selectedTextId) ?? null}
+        onAddText={addText}
+        onUpdateText={updateText}
+        onRemoveText={id => { removeText(id); setSelectedTextId(null); }}
       />
       <TitleInput value={fileName} onChange={setFileName} />
       <div className="fixed top-5 left-5 z-40">
-        <div
-          className="flex items-center gap-2.5 pl-4 pr-6 py-3 rounded-2xl border"
+        <button
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2.5 pl-4 pr-6 py-3 rounded-2xl border cursor-pointer"
           style={{ background: 'var(--glass)', borderColor: 'var(--glass-border)', boxShadow: 'var(--shadow-soft)' }}
         >
           <img src={CloverLogo} alt="Clover" className="h-7 w-auto" />
           <span className="text-[20px] font-semibold font-display tracking-[-0.02em] text-ink">Clover</span>
-        </div>
+        </button>
       </div>
       <EditorCanvas
         slots={slots}
@@ -100,10 +108,16 @@ function App() {
         onResizeFreeImage={resizeFreeImage}
         onRemoveFreeImage={removeFreeImage}
         onUpdateFreeImageCrop={updateFreeImageCrop}
+        texts={texts}
+        selectedTextId={selectedTextId}
+        onSelectText={setSelectedTextId}
+        onMoveText={moveText}
+        onResizeText={(id, width) => updateText(id, { width })}
+        onRemoveText={removeText}
       />
       {showExportModal && (
         <ExportModal
-          onConfirm={() => { setShowExportModal(false); exportPdf(slots, images, bgColor, bgImageUrl, decorations, freeImages, fileName); }}
+          onConfirm={() => { setShowExportModal(false); exportPdf(slots, images, bgColor, bgImageUrl, decorations, freeImages, texts, fileName); }}
           onCancel={() => setShowExportModal(false)}
         />
       )}

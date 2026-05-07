@@ -1,9 +1,21 @@
 import { useState, createElement } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import PdfDocument from '../components/export/PdfDocument';
-import type { LayoutSlot, UploadedImage, CanvasDecoration, FreeImage } from '../types';
+import type { LayoutSlot, UploadedImage, CanvasDecoration, FreeImage, CanvasText } from '../types';
 import { getCoverCrop } from '../utils/cropMath';
 import { A4 } from '../constants';
+
+function resolveColor(color: string): string {
+  if (color.startsWith('#')) return color;
+  // Canvas always converts any CSS color (oklch, hsl, named, etc.) to sRGB integers
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 function svgToBase64(svgUrl: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -86,6 +98,7 @@ export function useExport() {
     bgImageUrl: string | null,
     decorations: CanvasDecoration[],
     freeImages: FreeImage[],
+    texts: CanvasText[],
     fileName = 'photo-book',
   ) {
     setExporting(true);
@@ -134,6 +147,8 @@ export function useExport() {
         ),
       ]);
 
+      const resolvedTexts = texts.map(t => ({ ...t, color: resolveColor(t.color) }));
+
       const blob = await pdf(
         createElement(PdfDocument as any, {
           bgColor,
@@ -141,6 +156,7 @@ export function useExport() {
           photoSlots,
           freePhotos,
           decorations: resolvedDecorations,
+          texts: resolvedTexts,
         }) as any
       ).toBlob();
 
@@ -150,6 +166,9 @@ export function useExport() {
       a.download = `${fileName.trim() || 'untitled'}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[PDF export failed]', err);
+      alert('PDF export failed. Check the browser console for details.');
     } finally {
       setExporting(false);
     }

@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
 import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva';
 import { A4 } from '../../constants';
-import type { LayoutSlot, UploadedImage, CanvasDecoration, FreeImage } from '../../types';
+import type { LayoutSlot, UploadedImage, CanvasDecoration, FreeImage, CanvasText } from '../../types';
 import ImageSlot from './ImageSlot';
 import DecorationNode from './DecorationNode';
 import FreeImageNode from './FreeImageNode';
+import TextNode from './TextNode';
 import { useKonvaImage } from '../../hooks/useKonvaImage';
 
 interface EditorCanvasProps {
@@ -27,6 +28,12 @@ interface EditorCanvasProps {
   onResizeFreeImage: (id: string, width: number, height: number, rotation: number) => void;
   onRemoveFreeImage: (id: string) => void;
   onUpdateFreeImageCrop: (id: string, cropX: number, cropY: number) => void;
+  texts: CanvasText[];
+  selectedTextId: string | null;
+  onSelectText: (id: string | null) => void;
+  onMoveText: (id: string, x: number, y: number) => void;
+  onResizeText: (id: string, width: number) => void;
+  onRemoveText: (id: string) => void;
 }
 
 export default function EditorCanvas({
@@ -35,6 +42,7 @@ export default function EditorCanvas({
   onDropImage, onClearSlot, onUpdateSlotCrop,
   onMoveDecoration, onRemoveDecoration, onResizeDecoration,
   onDropFreeImage, onMoveFreeImage, onResizeFreeImage, onRemoveFreeImage, onUpdateFreeImageCrop,
+  texts, selectedTextId, onSelectText, onMoveText, onResizeText, onRemoveText,
 }: EditorCanvasProps) {
   const bgImage = useKonvaImage(bgImageUrl ?? '');
   const divRef = useRef<HTMLDivElement>(null);
@@ -46,6 +54,22 @@ export default function EditorCanvas({
       if (e.key === 'Escape') {
         setSelectedId(null);
         setCropModeId(null);
+        onSelectText(null);
+      }
+      const active = document.activeElement;
+      const isTyping = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement;
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !isTyping) {
+        if (selectedTextId) {
+          onRemoveText(selectedTextId);
+          onSelectText(null);
+        } else if (selectedId) {
+          if (decorations.some(d => d.id === selectedId)) {
+            onRemoveDecoration(selectedId);
+          } else if (freeImages.some(fi => fi.id === selectedId)) {
+            onRemoveFreeImage(selectedId);
+          }
+          setSelectedId(null);
+        }
       }
       if (e.key === 'c' || e.key === 'C') {
         if (selectedId) {
@@ -55,7 +79,7 @@ export default function EditorCanvas({
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selectedId]);
+  }, [selectedId, selectedTextId]);
 
   // exit crop mode when selection changes
   useEffect(() => {
@@ -97,7 +121,7 @@ export default function EditorCanvas({
         <Stage
           width={A4.width}
           height={A4.height}
-          onClick={() => { setSelectedId(null); setCropModeId(null); }}
+          onClick={() => { setSelectedId(null); setCropModeId(null); onSelectText(null); }}
         >
           <Layer>
             <Rect x={0} y={0} width={A4.width} height={A4.height} fill={bgColor} />
@@ -162,6 +186,16 @@ export default function EditorCanvas({
                 onMove={onMoveDecoration}
                 onRemove={onRemoveDecoration}
                 onResize={onResizeDecoration}
+              />
+            ))}
+            {texts.map(t => (
+              <TextNode
+                key={t.id}
+                canvasText={t}
+                selected={selectedTextId === t.id}
+                onSelect={() => onSelectText(t.id)}
+                onMove={onMoveText}
+                onResize={onResizeText}
               />
             ))}
           </Layer>

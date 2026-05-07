@@ -1,6 +1,17 @@
-import { Document, Page, Image } from '@react-pdf/renderer';
-import type { CanvasDecoration } from '../../types';
+import { Document, Page, Image, Text } from '@react-pdf/renderer';
+import type { CanvasDecoration, CanvasText } from '../../types';
 import type { PdfPhoto } from '../../hooks/useExport';
+import { A4 } from '../../constants';
+
+// Map canvas font families → built-in PDF fonts (no network loading needed)
+const PDF_FONT: Record<string, string> = {
+  'Lora': 'Times-Roman',
+  'Playfair Display': 'Times-Roman',
+  'JetBrains Mono': 'Courier',
+};
+function pdfFont(family: string): string {
+  return PDF_FONT[family] ?? 'Helvetica';
+}
 
 interface PdfDocumentProps {
   bgColor: string;
@@ -8,6 +19,7 @@ interface PdfDocumentProps {
   photoSlots: PdfPhoto[];
   freePhotos: PdfPhoto[];
   decorations: CanvasDecoration[];
+  texts: CanvasText[];
 }
 
 const S = 0.75; // 96dpi canvas px → 72pt PDF
@@ -28,7 +40,7 @@ function photoStyle(p: PdfPhoto) {
   };
 }
 
-export default function PdfDocument({ bgColor, bgImageUrl, photoSlots, freePhotos, decorations }: PdfDocumentProps) {
+export default function PdfDocument({ bgColor, bgImageUrl, photoSlots, freePhotos, decorations, texts }: PdfDocumentProps) {
   return (
     <Document>
       <Page size="A4" style={{ position: 'relative', backgroundColor: bgColor }}>
@@ -60,6 +72,26 @@ export default function PdfDocument({ bgColor, bgImageUrl, photoSlots, freePhoto
               }),
             }}
           />
+        ))}
+        {texts.map(t => (
+          <Text
+            key={t.id}
+            style={{
+              position: 'absolute',
+              left: t.x * S,
+              top: t.y * S,
+              width: (t.width ?? A4.width) * S,
+              fontFamily: pdfFont(t.fontFamily),
+              fontSize: t.fontSize * S,
+              fontWeight: t.bold ? 700 : 400,
+              ...(t.italic && { fontStyle: 'italic' }),
+              ...(t.underline && { textDecoration: 'underline' }),
+              textAlign: t.align,
+              color: t.color,
+            }}
+          >
+            {t.text}
+          </Text>
         ))}
       </Page>
     </Document>

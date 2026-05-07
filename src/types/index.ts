@@ -49,7 +49,7 @@ export interface CanvasText {
   underline: boolean;
   align: 'left' | 'center' | 'right';
   color: string;
-  width: number;
+  width?: number;
 }
 
 export interface Template {

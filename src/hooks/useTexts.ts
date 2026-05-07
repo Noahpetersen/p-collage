@@ -9,7 +9,7 @@ export function useTexts() {
     setTexts(prev => [...prev, {
       ...partial,
       id: crypto.randomUUID(),
-      x: Math.round(A4.width / 2 - partial.width / 2),
+      x: Math.round(A4.width / 4),
       y: Math.round(A4.height / 2 - partial.fontSize),
     }]);
   }
