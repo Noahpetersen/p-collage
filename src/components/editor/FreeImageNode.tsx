@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react';
 import { Image as KonvaImage, Transformer } from 'react-konva';
 import type { FreeImage, UploadedImage } from '../../types';
 import { useKonvaImage } from '../../hooks/useKonvaImage';
+import { useCropDrag } from '../../hooks/useCropDrag';
 import { getCoverCrop } from '../../utils/cropMath';
 import type Konva from 'konva';
 
@@ -24,7 +25,6 @@ export default function FreeImageNode({
   const img = useKonvaImage(image.url);
   const imageRef = useRef<Konva.Image>(null);
   const trRef = useRef<Konva.Transformer>(null);
-  const prevPointerRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!trRef.current) return;
@@ -38,6 +38,17 @@ export default function FreeImageNode({
 
   const { width, height } = freeImage;
 
+  const { startCropDrag, moveCropDrag } = useCropDrag({
+    img,
+    slotW: width,
+    slotH: height,
+    cropX: freeImage.cropX,
+    cropY: freeImage.cropY,
+    pinX: freeImage.x,
+    pinY: freeImage.y,
+    onCropOffset: (cx, cy) => onCropOffset(freeImage.id, cx, cy),
+  });
+
   function handleTransformEnd() {
     const node = imageRef.current!;
     const newW = Math.max(40, node.width() * node.scaleX());
@@ -49,50 +60,15 @@ export default function FreeImageNode({
   }
 
   function handleDragStart(e: Konva.KonvaEventObject<DragEvent>) {
-    if (!cropMode) return;
-    const stage = e.target.getStage()!;
-    prevPointerRef.current = stage.getPointerPosition();
+    if (cropMode) startCropDrag(e);
   }
 
   function handleDragMove(e: Konva.KonvaEventObject<DragEvent>) {
-    if (!cropMode || !img || !prevPointerRef.current) return;
-
-    const stage = e.target.getStage()!;
-    const pos = stage.getPointerPosition()!;
-    const dx = pos.x - prevPointerRef.current.x;
-    const dy = pos.y - prevPointerRef.current.y;
-    prevPointerRef.current = pos;
-
-    // Pin the node — only crop moves
-    e.target.x(freeImage.x);
-    e.target.y(freeImage.y);
-
-    const slotAspect = width / height;
-    let cropW: number, cropH: number;
-    if (img.naturalWidth / img.naturalHeight > slotAspect) {
-      cropH = img.naturalHeight;
-      cropW = img.naturalHeight * slotAspect;
-    } else {
-      cropW = img.naturalWidth;
-      cropH = img.naturalWidth / slotAspect;
-    }
-
-    const maxX = img.naturalWidth - cropW;
-    const maxY = img.naturalHeight - cropH;
-
-    const newCropX = freeImage.cropX * maxX - dx * (cropW / width);
-    const newCropY = freeImage.cropY * maxY - dy * (cropH / height);
-
-    onCropOffset(
-      freeImage.id,
-      maxX > 0 ? Math.max(0, Math.min(1, newCropX / maxX)) : 0.5,
-      maxY > 0 ? Math.max(0, Math.min(1, newCropY / maxY)) : 0.5,
-    );
+    if (cropMode) moveCropDrag(e);
   }
 
   function handleDragEnd(e: Konva.KonvaEventObject<DragEvent>) {
-    if (cropMode) return;
-    onMove(freeImage.id, e.target.x(), e.target.y());
+    if (!cropMode) onMove(freeImage.id, e.target.x(), e.target.y());
   }
 
   const borderColor = cropMode ? '#f97316' : 'white';

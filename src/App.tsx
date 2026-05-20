@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import EditorCanvas from './components/editor/EditorCanvas';
 import Navbar from './components/ui/Navbar';
 import SidePanel from './components/ui/SidePanel';
@@ -13,7 +13,14 @@ import { useFreeLayout } from './hooks/useFreeLayout';
 import { useTexts } from './hooks/useTexts';
 import { templates } from './templates';
 import type { Template } from './types';
-import { useState } from 'react';
+
+// Static — never changes, no need to recreate on every render
+const BG_GRADIENTS = (
+  <div className="fixed inset-0 pointer-events-none z-0">
+    <div className="absolute top-0 right-0 w-[42vw] h-[42vh]" style={{ background: 'radial-gradient(ellipse at top right, rgba(255, 182, 193, 0.38) 0%, transparent 70%)' }} />
+    <div className="absolute bottom-0 left-0 w-[38vw] h-[38vh]" style={{ background: 'radial-gradient(ellipse at bottom left, rgba(134, 210, 172, 0.32) 0%, transparent 70%)' }} />
+  </div>
+);
 
 function App() {
   const [showExportModal, setShowExportModal] = useState(false);
@@ -41,23 +48,35 @@ function App() {
   const { texts, addText, moveText, updateText, removeText } = useTexts();
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
 
-  function handleSelectTemplate(t: Template) {
+  // Memoized: avoids O(n) find on every render
+  const selectedText = useMemo(
+    () => texts.find(t => t.id === selectedTextId) ?? null,
+    [texts, selectedTextId],
+  );
+
+  const handleSelectTemplate = useCallback((t: Template) => {
     setFreeMode(false);
     setActiveTemplateId(t.id);
     loadTemplate(t);
-  }
+  }, [loadTemplate]);
 
-  function handleFreeMode() {
+  const handleFreeMode = useCallback(() => {
     setFreeMode(true);
     clearFreeImages();
-  }
+  }, [clearFreeImages]);
+
+  const handleRemoveText = useCallback((id: string) => {
+    removeText(id);
+    setSelectedTextId(null);
+  }, [removeText]);
+
+  const handleResizeText = useCallback((id: string, width: number) => {
+    updateText(id, { width });
+  }, [updateText]);
 
   return (
     <div className="min-h-screen bg-bg relative">
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-[42vw] h-[42vh]" style={{ background: 'radial-gradient(ellipse at top right, rgba(255, 182, 193, 0.38) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-0 left-0 w-[38vw] h-[38vh]" style={{ background: 'radial-gradient(ellipse at bottom left, rgba(134, 210, 172, 0.32) 0%, transparent 70%)' }} />
-      </div>
+      {BG_GRADIENTS}
       <SidePanel
         templates={templates}
         onSelectTemplate={handleSelectTemplate}
@@ -72,10 +91,10 @@ function App() {
         images={images}
         onFiles={handleFiles}
         onRemoveImage={removeImage}
-        selectedText={texts.find(t => t.id === selectedTextId) ?? null}
+        selectedText={selectedText}
         onAddText={addText}
         onUpdateText={updateText}
-        onRemoveText={id => { removeText(id); setSelectedTextId(null); }}
+        onRemoveText={handleRemoveText}
       />
       <TitleInput value={fileName} onChange={setFileName} />
       <div className="fixed top-5 left-5 z-40">
@@ -112,7 +131,7 @@ function App() {
         selectedTextId={selectedTextId}
         onSelectText={setSelectedTextId}
         onMoveText={moveText}
-        onResizeText={(id, width) => updateText(id, { width })}
+        onResizeText={handleResizeText}
         onRemoveText={removeText}
       />
       {showExportModal && (

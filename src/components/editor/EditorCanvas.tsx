@@ -49,8 +49,13 @@ export default function EditorCanvas({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cropModeId, setCropModeId] = useState<string | null>(null);
 
+  // Keep a ref with the latest props/state so the keydown listener never captures stale values
+  const keyCtx = useRef({ decorations, freeImages, onRemoveDecoration, onRemoveFreeImage, onRemoveText, onSelectText, selectedId, selectedTextId });
+  keyCtx.current = { decorations, freeImages, onRemoveDecoration, onRemoveFreeImage, onRemoveText, onSelectText, selectedId, selectedTextId };
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      const { decorations, freeImages, onRemoveDecoration, onRemoveFreeImage, onRemoveText, onSelectText, selectedId, selectedTextId } = keyCtx.current;
       if (e.key === 'Escape') {
         setSelectedId(null);
         setCropModeId(null);
@@ -71,15 +76,13 @@ export default function EditorCanvas({
           setSelectedId(null);
         }
       }
-      if (e.key === 'c' || e.key === 'C') {
-        if (selectedId) {
-          setCropModeId(prev => prev === selectedId ? null : selectedId);
-        }
+      if ((e.key === 'c' || e.key === 'C') && selectedId) {
+        setCropModeId(prev => prev === selectedId ? null : selectedId);
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selectedId, selectedTextId]);
+  }, []); // stable — reads live values via ref, never needs re-registration
 
   // exit crop mode when selection changes
   useEffect(() => {

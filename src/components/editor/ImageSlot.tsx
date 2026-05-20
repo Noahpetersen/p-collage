@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Image as KonvaImage } from 'react-konva';
 import type { LayoutSlot } from '../../types';
 import { useKonvaImage } from '../../hooks/useKonvaImage';
+import { useCropDrag } from '../../hooks/useCropDrag';
 import { getCoverCrop } from '../../utils/cropMath';
 import type Konva from 'konva';
 
@@ -15,55 +16,26 @@ interface ImageSlotProps {
 export default function ImageSlot({ slot, url, onClear, onCropOffset }: ImageSlotProps) {
   const img = useKonvaImage(url);
   const movedRef = useRef(false);
-  const prevPointerRef = useRef<{ x: number; y: number } | null>(null);
+
+  const { startCropDrag, moveCropDrag } = useCropDrag({
+    img,
+    slotW: slot.width,
+    slotH: slot.height,
+    cropX: slot.cropX,
+    cropY: slot.cropY,
+    pinX: slot.x,
+    pinY: slot.y,
+    onCropOffset: (cx, cy) => onCropOffset(slot.id, cx, cy),
+  });
 
   function handleDragStart(e: Konva.KonvaEventObject<DragEvent>) {
     movedRef.current = false;
-    const stage = e.target.getStage()!;
-    prevPointerRef.current = stage.getPointerPosition();
+    startCropDrag(e);
     document.body.style.cursor = 'grabbing';
   }
 
   function handleDragMove(e: Konva.KonvaEventObject<DragEvent>) {
-    if (!img || !prevPointerRef.current) return;
-
-    const stage = e.target.getStage()!;
-    const pos = stage.getPointerPosition()!;
-    const dx = pos.x - prevPointerRef.current.x;
-    const dy = pos.y - prevPointerRef.current.y;
-    prevPointerRef.current = pos;
-
-    // Keep node pinned — only the crop moves
-    e.target.x(slot.x);
-    e.target.y(slot.y);
-
-    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-    movedRef.current = true;
-
-    const slotAspect = slot.width / slot.height;
-    let cropW: number, cropH: number;
-    if (img.naturalWidth / img.naturalHeight > slotAspect) {
-      cropH = img.naturalHeight;
-      cropW = img.naturalHeight * slotAspect;
-    } else {
-      cropW = img.naturalWidth;
-      cropH = img.naturalWidth / slotAspect;
-    }
-
-    const maxX = img.naturalWidth - cropW;
-    const maxY = img.naturalHeight - cropH;
-
-    const currentCropX = slot.cropX * maxX;
-    const currentCropY = slot.cropY * maxY;
-
-    // drag right → crop shifts left (negative dx reduces cropX)
-    const newCropX = currentCropX - dx * (cropW / slot.width);
-    const newCropY = currentCropY - dy * (cropH / slot.height);
-
-    const newOffsetX = maxX > 0 ? Math.max(0, Math.min(1, newCropX / maxX)) : 0.5;
-    const newOffsetY = maxY > 0 ? Math.max(0, Math.min(1, newCropY / maxY)) : 0.5;
-
-    onCropOffset(slot.id, newOffsetX, newOffsetY);
+    if (moveCropDrag(e)) movedRef.current = true;
   }
 
   function handleDragEnd() {
