@@ -36,6 +36,12 @@ interface EditorCanvasProps {
   onRemoveText: (id: string) => void;
 }
 
+function computeCanvasScale() {
+  // py-16 = 64px top + 64px bottom padding in the flex container
+  const availH = window.innerHeight - 128;
+  return Math.min(1, Math.max(0.45, availH / A4.height));
+}
+
 export default function EditorCanvas({
   slots, images, bgColor, bgImageUrl, decorations, showSlots,
   freeMode, freeImages,
@@ -48,6 +54,13 @@ export default function EditorCanvas({
   const divRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cropModeId, setCropModeId] = useState<string | null>(null);
+  const [scale, setScale] = useState(computeCanvasScale);
+
+  useEffect(() => {
+    function update() { setScale(computeCanvasScale()); }
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   // Keep a ref with the latest props/state so the keydown listener never captures stale values
   const keyCtx = useRef({ decorations, freeImages, onRemoveDecoration, onRemoveFreeImage, onRemoveText, onSelectText, selectedId, selectedTextId });
@@ -99,8 +112,9 @@ export default function EditorCanvas({
     if (!imageId || !divRef.current) return;
 
     const rect = divRef.current.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
+    // getBoundingClientRect returns visual (scaled) coords — divide by scale to get Konva space
+    const px = (e.clientX - rect.left) / scale;
+    const py = (e.clientY - rect.top) / scale;
 
     if (freeMode) {
       onDropFreeImage(imageId, px, py);
@@ -115,12 +129,15 @@ export default function EditorCanvas({
 
   return (
     <div className="flex items-center justify-center min-h-screen py-16">
-      <div
-        ref={divRef}
-        className="shadow-2xl"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-      >
+      {/* Outer div sized to the visual (scaled) canvas so flex centering accounts for it */}
+      <div style={{ width: A4.width * scale, height: A4.height * scale }}>
+        <div
+          ref={divRef}
+          className="shadow-2xl"
+          style={{ width: A4.width, height: A4.height, transform: `scale(${scale})`, transformOrigin: 'top left' }}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+        >
         <Stage
           width={A4.width}
           height={A4.height}
@@ -203,6 +220,7 @@ export default function EditorCanvas({
             ))}
           </Layer>
         </Stage>
+        </div>
       </div>
     </div>
   );

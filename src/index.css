@@ -32,3 +32,38 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
+
+/* Side panel responsive sizing */
+.side-tab-btn {
+  width: 4rem;
+  height: 4rem;
+}
+
+.side-panel-content {
+  width: 448px;
+}
+
+/* MacBook 13" / iPad landscape (~1280px wide, ~800px tall) */
+@media (max-width: 1280px) {
+  .side-tab-btn {
+    width: 3rem;
+    height: 3rem;
+  }
+  .side-panel-content {
+    width: 340px;
+  }
+}
+
+/* iPad portrait and smaller (~1024px wide) */
+@media (max-width: 1024px) {
+  .side-tab-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .side-panel-content {
+    width: 260px;
+  }
+  .side-tab-label {
+    display: none;
+  }
+}

@@ -52,14 +52,14 @@ export default function SidePanel({
             key={tabItem.id}
             onClick={() => setTab(prev => prev === tabItem.id ? null : tabItem.id)}
             title={tabItem.label}
-            className={`w-16 h-16 flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors font-sans ${
+            className={`side-tab-btn flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors font-sans ${
               tab === tabItem.id
                 ? 'bg-accent text-white'
                 : 'text-ink-soft hover:bg-[rgba(27,36,34,0.05)] hover:text-ink'
             }`}
           >
             {tabItem.icon}
-            <span className="text-[10px] font-medium leading-none">{tabItem.label}</span>
+            <span className="side-tab-label text-[10px] font-medium leading-none">{tabItem.label}</span>
           </button>
         ))}
       </nav>
@@ -67,7 +67,7 @@ export default function SidePanel({
       {/* Content panel — only shown when a tab is active */}
       {currentTab && (
         <div
-          className="w-[448px] h-[60vh] rounded-2xl border flex flex-col overflow-hidden"
+          className="side-panel-content h-[60vh] rounded-2xl border flex flex-col overflow-hidden"
           style={{ background: 'var(--glass)', borderColor: 'var(--glass-border)', boxShadow: 'var(--shadow)' }}
         >
           <div className="px-6 pt-5 pb-4 border-b border-line flex-shrink-0 flex items-start justify-between gap-3">
