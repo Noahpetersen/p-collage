@@ -10,7 +10,8 @@ interface TextTabProps {
 
 export default function TextTab({ selectedText, onAddText, onUpdateText, onRemoveText }: TextTabProps) {
   return (
-    <div className="overflow-y-auto flex-1 min-h-0 p-4 flex flex-col gap-2">
+    <div className="overflow-y-auto flex-1 min-h-0">
+      <div className="p-4 flex flex-col gap-2">
       {TEXT_PRESETS.map((preset, i) => (
         <button
           key={i}
@@ -126,6 +127,7 @@ export default function TextTab({ selectedText, onAddText, onUpdateText, onRemov
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

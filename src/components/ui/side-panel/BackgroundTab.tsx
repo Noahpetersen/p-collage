@@ -23,7 +23,8 @@ export default function BackgroundTab({ bgColor, onBgColorChange, bgImageUrl, on
   const isCustomColor = !BG_PRESETS.some(p => p.value === bgColor);
 
   return (
-    <div className="overflow-y-auto flex-1 min-h-0 p-4 flex flex-col gap-4">
+    <div className="overflow-y-auto flex-1 min-h-0">
+      <div className="p-4 flex flex-col gap-4">
       <div className="grid grid-cols-5 gap-2">
         {BG_PRESETS.map(preset => (
           <button
@@ -88,6 +89,7 @@ export default function BackgroundTab({ bgColor, onBgColorChange, bgImageUrl, on
             <img src={bg.url} alt={bg.name} className="w-full h-full object-cover" />
           </button>
         ))}
+      </div>
       </div>
     </div>
   );

@@ -6,7 +6,8 @@ interface StickersTabProps {
 
 export default function StickersTab({ onAddDecoration }: StickersTabProps) {
   return (
-    <div className="overflow-y-auto flex-1 min-h-0 p-4">
+    <div className="overflow-y-auto flex-1 min-h-0">
+      <div className="p-4">
       <p className="text-ink-soft text-xs px-1 pb-2 font-sans">Click to place · Drag to move · Click to remove</p>
       <div className="grid grid-cols-4 gap-2">
         {stickers.map(sticker => (
@@ -20,6 +21,7 @@ export default function StickersTab({ onAddDecoration }: StickersTabProps) {
             <span className="text-ink-soft text-[10px] group-hover:text-ink transition-colors font-sans">{sticker.name}</span>
           </button>
         ))}
+      </div>
       </div>
     </div>
   );
