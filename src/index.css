@@ -41,6 +41,8 @@ body {
 
 .side-panel-content {
   width: 448px;
+  /* Never taller than the viewport minus space for the top/bottom UI chrome */
+  height: min(60vh, calc(100vh - 120px));
 }
 
 /* MacBook 13" / iPad landscape (~1280px wide, ~800px tall) */

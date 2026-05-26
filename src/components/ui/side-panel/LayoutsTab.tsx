@@ -12,7 +12,7 @@ interface LayoutsTabProps {
 
 export default function LayoutsTab({ templates, freeMode, activeTemplateId, onSelectTemplate, onFreeMode }: LayoutsTabProps) {
   return (
-    <div className="overflow-y-auto p-4 flex-1">
+    <div className="overflow-y-auto p-4 flex-1 min-h-0">
       <div className="grid grid-cols-3 gap-2">
         <button
           onClick={onFreeMode}

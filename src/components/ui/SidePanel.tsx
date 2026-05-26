@@ -67,7 +67,7 @@ export default function SidePanel({
       {/* Content panel — only shown when a tab is active */}
       {currentTab && (
         <div
-          className="side-panel-content h-[60vh] rounded-2xl border flex flex-col overflow-hidden"
+          className="side-panel-content rounded-2xl border flex flex-col overflow-hidden"
           style={{ background: 'var(--glass)', borderColor: 'var(--glass-border)', boxShadow: 'var(--shadow)' }}
         >
           <div className="px-6 pt-5 pb-4 border-b border-line flex-shrink-0 flex items-start justify-between gap-3">
