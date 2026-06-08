@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useMemo } from 'react';
+import type Konva from 'konva';
 import EditorCanvas from './components/editor/EditorCanvas';
 import Navbar from './components/ui/Navbar';
 import SidePanel from './components/ui/SidePanel';
@@ -31,6 +32,7 @@ function App() {
   const [activeTemplateId, setActiveTemplateId] = useState<string>(templates[0].id);
   const [fileName, setFileName] = useState('');
   const bgImageUrlRef = useRef<string | null>(null);
+  const stageRef = useRef<Konva.Stage>(null);
 
   function handleBgImageChange(url: string | null) {
     if (bgImageUrlRef.current?.startsWith('blob:')) {
@@ -42,7 +44,7 @@ function App() {
 
   const { images, handleFiles, removeImage } = useImages();
   const { slots, assignImage, clearSlot, loadTemplate, updateCrop: updateSlotCrop } = useLayout(templates[0]);
-  const { exportPdf, exporting } = useExport();
+  const { exportPdf, exportJpeg, exporting } = useExport();
   const { decorations, addDecoration, moveDecoration, removeDecoration, resizeDecoration } = useDecorations();
   const { freeImages, addFreeImage, moveFreeImage, resizeFreeImage, updateCrop: updateFreeImageCrop, removeFreeImage, clearFreeImages } = useFreeLayout();
   const { texts, addText, moveText, updateText, removeText } = useTexts();
@@ -73,6 +75,15 @@ function App() {
   const handleResizeText = useCallback((id: string, width: number) => {
     updateText(id, { width });
   }, [updateText]);
+
+  const handleConfirmExport = useCallback((format: 'pdf' | 'jpeg') => {
+    setShowExportModal(false);
+    if (format === 'jpeg') {
+      if (stageRef.current) exportJpeg(stageRef.current, fileName);
+    } else {
+      exportPdf(slots, images, bgColor, bgImageUrl, decorations, freeImages, texts, fileName);
+    }
+  }, [exportJpeg, exportPdf, slots, images, bgColor, bgImageUrl, decorations, freeImages, texts, fileName]);
 
   return (
     <div className="min-h-screen bg-bg relative">
@@ -108,6 +119,7 @@ function App() {
         </button>
       </div>
       <EditorCanvas
+        stageRef={stageRef}
         slots={slots}
         images={images}
         bgColor={bgColor}
@@ -136,7 +148,7 @@ function App() {
       />
       {showExportModal && (
         <ExportModal
-          onConfirm={() => { setShowExportModal(false); exportPdf(slots, images, bgColor, bgImageUrl, decorations, freeImages, texts, fileName); }}
+          onConfirm={handleConfirmExport}
           onCancel={() => setShowExportModal(false)}
         />
       )}

@@ -1,5 +1,6 @@
 import { useState, createElement } from 'react';
 import { pdf } from '@react-pdf/renderer';
+import type Konva from 'konva';
 import PdfDocument from '../components/export/PdfDocument';
 import type { LayoutSlot, UploadedImage, CanvasDecoration, FreeImage, CanvasText } from '../types';
 import { resolveColor, resolveForPdf, prerenderCropped, type PdfPhoto } from '../utils/pdfHelpers';
@@ -90,5 +91,31 @@ export function useExport() {
     }
   }
 
-  return { exportPdf, exporting };
+  function exportJpeg(stage: Konva.Stage, fileName = 'photo-book') {
+    setExporting(true);
+    try {
+      // Hide editor-only chrome — selection handles and empty-slot placeholder
+      // guides — so they don't end up in the rasterized image
+      const hidden = [...stage.find('Transformer'), ...stage.find('.slot-placeholder')];
+      hidden.forEach(node => node.visible(false));
+      stage.batchDraw();
+
+      const dataUrl = stage.toDataURL({ mimeType: 'image/jpeg', quality: 0.92, pixelRatio: 2 });
+
+      hidden.forEach(node => node.visible(true));
+      stage.batchDraw();
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `${fileName.trim() || 'untitled'}.jpg`;
+      a.click();
+    } catch (err) {
+      console.error('[JPEG export failed]', err);
+      alert('JPEG export failed. Check the browser console for details.');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  return { exportPdf, exportJpeg, exporting };
 }

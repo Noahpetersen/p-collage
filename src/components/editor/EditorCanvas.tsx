@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva';
+import type Konva from 'konva';
 import { A4 } from '../../constants';
 import type { LayoutSlot, UploadedImage, CanvasDecoration, FreeImage, CanvasText } from '../../types';
 import ImageSlot from './ImageSlot';
@@ -9,6 +10,7 @@ import TextNode from './TextNode';
 import { useKonvaImage } from '../../hooks/useKonvaImage';
 
 interface EditorCanvasProps {
+  stageRef?: React.RefObject<Konva.Stage | null>;
   slots: LayoutSlot[];
   images: UploadedImage[];
   bgColor: string;
@@ -43,6 +45,7 @@ function computeCanvasScale() {
 }
 
 export default function EditorCanvas({
+  stageRef,
   slots, images, bgColor, bgImageUrl, decorations, showSlots,
   freeMode, freeImages,
   onDropImage, onClearSlot, onUpdateSlotCrop,
@@ -139,6 +142,7 @@ export default function EditorCanvas({
           onDragOver={handleDragOver}
         >
         <Stage
+          ref={stageRef}
           width={A4.width}
           height={A4.height}
           onClick={() => { setSelectedId(null); setCropModeId(null); onSelectText(null); }}
@@ -167,6 +171,7 @@ export default function EditorCanvas({
               return (
                 <Rect
                   key={slot.id}
+                  name="slot-placeholder"
                   x={slot.x}
                   y={slot.y}
                   width={slot.width}
