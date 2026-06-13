@@ -6,12 +6,62 @@ interface PhotosTabProps {
   images: UploadedImage[];
   onFiles: (files: FileList | File[]) => void;
   onRemoveImage: (id: string) => void;
+  selectedImageId: string | null;
+  onSelectImage: (id: string) => void;
+  onDragImageStart: (image: UploadedImage, x: number, y: number) => void;
+  onDragImageMove: (x: number, y: number) => void;
+  onDragImageEnd: (image: UploadedImage, x: number, y: number) => void;
+  onDragImageCancel: () => void;
 }
 
-export default function PhotosTab({ images, onFiles, onRemoveImage }: PhotosTabProps) {
+const DRAG_THRESHOLD = 8;
+
+export default function PhotosTab({ images, onFiles, onRemoveImage, selectedImageId, onSelectImage, onDragImageStart, onDragImageMove, onDragImageEnd, onDragImageCancel }: PhotosTabProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [loadingSamples, setLoadingSamples] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  function handleThumbPointerDown(e: React.PointerEvent, img: UploadedImage) {
+    if ((e.target as HTMLElement).closest('button')) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let dragStarted = false;
+
+    function onMove(ev: PointerEvent) {
+      if (!dragStarted) {
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < DRAG_THRESHOLD) return;
+        dragStarted = true;
+        onDragImageStart(img, ev.clientX, ev.clientY);
+      } else {
+        onDragImageMove(ev.clientX, ev.clientY);
+      }
+    }
+
+    function onUp(ev: PointerEvent) {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      if (dragStarted) {
+        onDragImageEnd(img, ev.clientX, ev.clientY);
+      } else {
+        onSelectImage(img.id);
+      }
+    }
+
+    // Fires when the browser takes over the gesture (e.g. for native scrolling
+    // via touch-action: pan-y) — abort instead of dropping at the last position.
+    function onCancel() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      if (dragStarted) onDragImageCancel();
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+  }
 
   async function handleLoadSamples() {
     setLoadingSamples(true);
@@ -67,31 +117,37 @@ export default function PhotosTab({ images, onFiles, onRemoveImage }: PhotosTabP
       )}
 
       {images.length > 0 && (
-        <div className="overflow-y-auto flex-1 min-h-0 px-4 pb-4">
-          <div className="grid grid-cols-4 gap-1.5">
-            {images.map(img => (
-              <div
-                key={img.id}
-                draggable
-                onDragStart={e => {
-                  e.dataTransfer.setData('imageId', img.id);
-                  e.dataTransfer.effectAllowed = 'copy';
-                }}
-                className="relative aspect-square overflow-hidden rounded-lg bg-bg-soft group cursor-grab"
-              >
-                <img src={img.url} alt={img.name} draggable={false} className="w-full h-full object-cover pointer-events-none" />
-                <button
-                  onClick={() => onRemoveImage(img.id)}
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+        <>
+          <p className="px-4 pb-2 text-ink-soft text-xs font-sans">
+            {selectedImageId
+              ? 'Now tap a spot on the page to place it'
+              : 'Tap a photo, then tap a spot on the page · Drag to move'}
+          </p>
+          <div className="overflow-y-auto flex-1 min-h-0 px-4 pb-4">
+            <div className="grid grid-cols-4 gap-1.5">
+              {images.map(img => (
+                <div
+                  key={img.id}
+                  onPointerDown={e => handleThumbPointerDown(e, img)}
+                  style={{ touchAction: 'pan-y' }}
+                  className={`relative aspect-square overflow-hidden rounded-lg bg-bg-soft group cursor-grab transition-all ${
+                    selectedImageId === img.id ? 'ring-2 ring-accent ring-offset-1' : ''
+                  }`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
+                  <img src={img.url} alt={img.name} draggable={false} className="w-full h-full object-cover pointer-events-none" />
+                  <button
+                    onClick={e => { e.stopPropagation(); onRemoveImage(img.id); }}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 flex items-center justify-center rounded-full bg-black/50 opacity-60 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 text-white">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <input ref={photoInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoInputChange} />

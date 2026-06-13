@@ -86,7 +86,9 @@ export default function FreeImageNode({
         crop={img ? getCoverCrop(img.naturalWidth, img.naturalHeight, width, height, freeImage.cropX, freeImage.cropY) : undefined}
         draggable
         onClick={e => { e.cancelBubble = true; onSelect(); }}
+        onTap={e => { e.cancelBubble = true; onSelect(); }}
         onDblClick={() => onRemove(freeImage.id)}
+        onDblTap={() => onRemove(freeImage.id)}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -100,6 +102,7 @@ export default function FreeImageNode({
         anchorFill="white"
         anchorSize={8}
         anchorCornerRadius={2}
+        anchorStyleFunc={anchor => anchor.hitStrokeWidth(20)}
         boundBoxFunc={(oldBox, newBox) =>
           newBox.width < 40 || newBox.height < 30 ? oldBox : newBox
         }

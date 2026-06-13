@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CanvasText } from '../types';
 import { A4 } from '../constants';
+import { generateId } from '../utils/id';
 
 export function useTexts() {
   const [texts, setTexts] = useState<CanvasText[]>([]);
@@ -8,7 +9,7 @@ export function useTexts() {
   function addText(partial: Omit<CanvasText, 'id' | 'x' | 'y'>) {
     setTexts(prev => [...prev, {
       ...partial,
-      id: crypto.randomUUID(),
+      id: generateId(),
       x: Math.round(A4.width / 4),
       y: Math.round(A4.height / 2 - partial.fontSize),
     }]);

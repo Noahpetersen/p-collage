@@ -54,6 +54,7 @@ export default function TextNode({ canvasText, selected, onSelect, onMove, onRes
         width={canvasText.width}
         draggable
         onClick={(e) => { e.cancelBubble = true; onSelect(); }}
+        onTap={(e) => { e.cancelBubble = true; onSelect(); }}
         onDragEnd={e => onMove(canvasText.id, e.target.x(), e.target.y())}
         onTransformEnd={handleTransformEnd}
         onMouseEnter={() => { document.body.style.cursor = 'move'; }}
@@ -70,6 +71,7 @@ export default function TextNode({ canvasText, selected, onSelect, onMove, onRes
         anchorFill="white"
         anchorSize={8}
         anchorCornerRadius={2}
+        anchorStyleFunc={anchor => anchor.hitStrokeWidth(20)}
         boundBoxFunc={(oldBox, newBox) => newBox.width < 50 ? oldBox : newBox}
       />
     </>

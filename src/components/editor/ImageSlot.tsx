@@ -61,6 +61,7 @@ export default function ImageSlot({ slot, url, onClear, onCropOffset }: ImageSlo
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onClick={handleClick}
+      onTap={handleClick}
       onMouseEnter={() => { document.body.style.cursor = 'grab'; }}
       onMouseLeave={() => { document.body.style.cursor = 'default'; }}
     />

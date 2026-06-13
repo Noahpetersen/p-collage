@@ -49,7 +49,9 @@ export default function DecorationNode({ decoration, selected, onSelect, onMove,
         rotation={decoration.rotation}
         draggable
         onClick={e => { e.cancelBubble = true; onSelect(); }}
+        onTap={e => { e.cancelBubble = true; onSelect(); }}
         onDblClick={() => onRemove(decoration.id)}
+        onDblTap={() => onRemove(decoration.id)}
         onDragEnd={e => onMove(decoration.id, e.target.x(), e.target.y())}
         onTransformEnd={handleTransformEnd}
       />
@@ -62,6 +64,7 @@ export default function DecorationNode({ decoration, selected, onSelect, onMove,
         anchorFill="white"
         anchorSize={8}
         anchorCornerRadius={2}
+        anchorStyleFunc={anchor => anchor.hitStrokeWidth(20)}
         enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']}
         boundBoxFunc={(oldBox, newBox) => newBox.width < 24 ? oldBox : newBox}
       />

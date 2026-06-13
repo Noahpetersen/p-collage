@@ -69,3 +69,14 @@ body {
     display: none;
   }
 }
+
+/* Rotate-device prompt: only on tablet/phone-sized portrait viewports */
+.rotate-overlay {
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 1024px) {
+  .rotate-overlay {
+    display: flex;
+  }
+}

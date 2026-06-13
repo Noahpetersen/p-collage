@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FreeImage } from '../types';
+import { generateId } from '../utils/id';
 
 const DEFAULT_W = 220;
 const DEFAULT_H = 165;
@@ -9,7 +10,7 @@ export function useFreeLayout() {
 
   function addFreeImage(imageId: string, x: number, y: number) {
     setFreeImages(prev => [...prev, {
-      id: crypto.randomUUID(),
+      id: generateId(),
       imageId,
       x: x - DEFAULT_W / 2,
       y: y - DEFAULT_H / 2,

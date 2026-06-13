@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { UploadedImage } from '../types';
+import { generateId } from '../utils/id';
 
 export function useImages() {
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -15,7 +16,7 @@ export function useImages() {
   function handleFiles(files: FileList | File[]) {
     const accepted = Array.from(files).filter(f => f.type.startsWith('image/'));
     const newImages: UploadedImage[] = accepted.map(file => ({
-      id: crypto.randomUUID(),
+      id: generateId(),
       url: URL.createObjectURL(file),
       name: file.name,
     }));

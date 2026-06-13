@@ -21,6 +21,12 @@ interface SidePanelProps {
   images: UploadedImage[];
   onFiles: (files: FileList | File[]) => void;
   onRemoveImage: (id: string) => void;
+  selectedImageId: string | null;
+  onSelectImage: (id: string) => void;
+  onDragImageStart: (image: UploadedImage, x: number, y: number) => void;
+  onDragImageMove: (x: number, y: number) => void;
+  onDragImageEnd: (image: UploadedImage, x: number, y: number) => void;
+  onDragImageCancel: () => void;
   selectedText: CanvasText | null;
   onAddText: (partial: Omit<CanvasText, 'id' | 'x' | 'y'>) => void;
   onUpdateText: (id: string, changes: Partial<CanvasText>) => void;
@@ -34,6 +40,8 @@ export default function SidePanel({
   onAddDecoration,
   freeMode, activeTemplateId, onFreeMode,
   images, onFiles, onRemoveImage,
+  selectedImageId, onSelectImage,
+  onDragImageStart, onDragImageMove, onDragImageEnd, onDragImageCancel,
   selectedText, onAddText, onUpdateText, onRemoveText,
 }: SidePanelProps) {
   const [tab, setTab] = useState<TabId | null>('layouts');
@@ -99,6 +107,12 @@ export default function SidePanel({
               images={images}
               onFiles={onFiles}
               onRemoveImage={onRemoveImage}
+              selectedImageId={selectedImageId}
+              onSelectImage={onSelectImage}
+              onDragImageStart={onDragImageStart}
+              onDragImageMove={onDragImageMove}
+              onDragImageEnd={onDragImageEnd}
+              onDragImageCancel={onDragImageCancel}
             />
           )}
           {tab === 'background' && (

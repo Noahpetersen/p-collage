@@ -1,10 +1,11 @@
 import { useRef, useState, useCallback, useMemo } from 'react';
 import type Konva from 'konva';
-import EditorCanvas from './components/editor/EditorCanvas';
+import EditorCanvas, { type EditorCanvasHandle } from './components/editor/EditorCanvas';
 import Navbar from './components/ui/Navbar';
 import SidePanel from './components/ui/SidePanel';
 import ExportModal from './components/ui/ExportModal';
 import TitleInput from './components/ui/TitleInput';
+import RotateDeviceOverlay from './components/ui/RotateDeviceOverlay';
 import CloverLogo from './assets/PollenLogo.png';
 import { useImages } from './hooks/useImages';
 import { useLayout } from './hooks/useLayout';
@@ -13,7 +14,7 @@ import { useDecorations } from './hooks/useDecorations';
 import { useFreeLayout } from './hooks/useFreeLayout';
 import { useTexts } from './hooks/useTexts';
 import { templates } from './templates';
-import type { Template } from './types';
+import type { Template, UploadedImage } from './types';
 
 // Static — never changes, no need to recreate on every render
 const BG_GRADIENTS = (
@@ -31,8 +32,11 @@ function App() {
   const [freeMode, setFreeMode] = useState(false);
   const [activeTemplateId, setActiveTemplateId] = useState<string>(templates[0].id);
   const [fileName, setFileName] = useState('');
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [dragImage, setDragImage] = useState<{ image: UploadedImage; x: number; y: number } | null>(null);
   const bgImageUrlRef = useRef<string | null>(null);
   const stageRef = useRef<Konva.Stage>(null);
+  const editorCanvasRef = useRef<EditorCanvasHandle>(null);
 
   function handleBgImageChange(url: string | null) {
     if (bgImageUrlRef.current?.startsWith('blob:')) {
@@ -42,11 +46,55 @@ function App() {
     setBgImageUrl(url);
   }
 
+  function handleBgColorChange(color: string) {
+    setBgColor(color);
+    handleBgImageChange(null);
+  }
+
   const { images, handleFiles, removeImage } = useImages();
+
+  const handleSelectImage = useCallback((id: string) => {
+    setSelectedImageId(prev => prev === id ? null : id);
+  }, []);
+
+  const handleRemoveImage = useCallback((id: string) => {
+    removeImage(id);
+    setSelectedImageId(prev => prev === id ? null : prev);
+  }, [removeImage]);
   const { slots, assignImage, clearSlot, loadTemplate, updateCrop: updateSlotCrop } = useLayout(templates[0]);
+  const { freeImages, addFreeImage, moveFreeImage, resizeFreeImage, updateCrop: updateFreeImageCrop, removeFreeImage, clearFreeImages } = useFreeLayout();
+
+  const handleDragImageStart = useCallback((image: UploadedImage, x: number, y: number) => {
+    setSelectedImageId(null);
+    setDragImage({ image, x, y });
+  }, []);
+
+  const handleDragImageMove = useCallback((x: number, y: number) => {
+    setDragImage(prev => prev ? { ...prev, x, y } : prev);
+  }, []);
+
+  const handleDragImageCancel = useCallback(() => {
+    setDragImage(null);
+  }, []);
+
+  const handleDragImageEnd = useCallback((image: UploadedImage, x: number, y: number) => {
+    setDragImage(null);
+    const point = editorCanvasRef.current?.screenToCanvas(x, y);
+    if (!point) return;
+
+    if (freeMode) {
+      addFreeImage(image.id, point.x, point.y);
+      return;
+    }
+
+    const hit = slots.find(
+      s => point.x >= s.x && point.x <= s.x + s.width && point.y >= s.y && point.y <= s.y + s.height
+    );
+    const target = hit ?? slots.find(s => !s.imageId);
+    if (target) assignImage(target.id, image.id);
+  }, [freeMode, slots, addFreeImage, assignImage]);
   const { exportPdf, exportJpeg, exporting } = useExport();
   const { decorations, addDecoration, moveDecoration, removeDecoration, resizeDecoration } = useDecorations();
-  const { freeImages, addFreeImage, moveFreeImage, resizeFreeImage, updateCrop: updateFreeImageCrop, removeFreeImage, clearFreeImages } = useFreeLayout();
   const { texts, addText, moveText, updateText, removeText } = useTexts();
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
 
@@ -81,18 +129,19 @@ function App() {
     if (format === 'jpeg') {
       if (stageRef.current) exportJpeg(stageRef.current, fileName);
     } else {
-      exportPdf(slots, images, bgColor, bgImageUrl, decorations, freeImages, texts, fileName);
+      exportPdf(freeMode ? [] : slots, images, bgColor, bgImageUrl, decorations, freeMode ? freeImages : [], texts, fileName);
     }
-  }, [exportJpeg, exportPdf, slots, images, bgColor, bgImageUrl, decorations, freeImages, texts, fileName]);
+  }, [exportJpeg, exportPdf, slots, images, bgColor, bgImageUrl, decorations, freeMode, freeImages, texts, fileName]);
 
   return (
     <div className="min-h-screen bg-bg relative">
+      <RotateDeviceOverlay />
       {BG_GRADIENTS}
       <SidePanel
         templates={templates}
         onSelectTemplate={handleSelectTemplate}
         bgColor={bgColor}
-        onBgColorChange={setBgColor}
+        onBgColorChange={handleBgColorChange}
         bgImageUrl={bgImageUrl}
         onBgImageChange={handleBgImageChange}
         onAddDecoration={addDecoration}
@@ -101,7 +150,13 @@ function App() {
         onFreeMode={handleFreeMode}
         images={images}
         onFiles={handleFiles}
-        onRemoveImage={removeImage}
+        onRemoveImage={handleRemoveImage}
+        selectedImageId={selectedImageId}
+        onSelectImage={handleSelectImage}
+        onDragImageStart={handleDragImageStart}
+        onDragImageMove={handleDragImageMove}
+        onDragImageEnd={handleDragImageEnd}
+        onDragImageCancel={handleDragImageCancel}
         selectedText={selectedText}
         onAddText={addText}
         onUpdateText={updateText}
@@ -119,6 +174,7 @@ function App() {
         </button>
       </div>
       <EditorCanvas
+        ref={editorCanvasRef}
         stageRef={stageRef}
         slots={slots}
         images={images}
@@ -139,12 +195,15 @@ function App() {
         onResizeFreeImage={resizeFreeImage}
         onRemoveFreeImage={removeFreeImage}
         onUpdateFreeImageCrop={updateFreeImageCrop}
+        selectedImageId={selectedImageId}
+        onPlaceImage={() => setSelectedImageId(null)}
         texts={texts}
         selectedTextId={selectedTextId}
         onSelectText={setSelectedTextId}
         onMoveText={moveText}
         onResizeText={handleResizeText}
         onRemoveText={removeText}
+        dragPosition={dragImage ? { x: dragImage.x, y: dragImage.y } : null}
       />
       {showExportModal && (
         <ExportModal
@@ -158,6 +217,14 @@ function App() {
         onExport={() => setShowExportModal(true)}
         onToggleSlots={() => setShowSlots(p => !p)}
       />
+      {dragImage && (
+        <div
+          className="fixed z-50 pointer-events-none rounded-xl overflow-hidden shadow-2xl ring-1 ring-white"
+          style={{ left: dragImage.x - 40, top: dragImage.y + 16, width: 80, height: 80 }}
+        >
+          <img src={dragImage.image.url} alt="" className="w-full h-full object-cover" />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva';
 import type Konva from 'konva';
 import { A4 } from '../../constants';
@@ -8,6 +8,11 @@ import DecorationNode from './DecorationNode';
 import FreeImageNode from './FreeImageNode';
 import TextNode from './TextNode';
 import { useKonvaImage } from '../../hooks/useKonvaImage';
+
+export interface EditorCanvasHandle {
+  /** Converts viewport (clientX/clientY) coordinates to A4 canvas coordinates. */
+  screenToCanvas: (clientX: number, clientY: number) => { x: number; y: number } | null;
+}
 
 interface EditorCanvasProps {
   stageRef?: React.RefObject<Konva.Stage | null>;
@@ -30,37 +35,53 @@ interface EditorCanvasProps {
   onResizeFreeImage: (id: string, width: number, height: number, rotation: number) => void;
   onRemoveFreeImage: (id: string) => void;
   onUpdateFreeImageCrop: (id: string, cropX: number, cropY: number) => void;
+  selectedImageId: string | null;
+  onPlaceImage: () => void;
   texts: CanvasText[];
   selectedTextId: string | null;
   onSelectText: (id: string | null) => void;
   onMoveText: (id: string, x: number, y: number) => void;
   onResizeText: (id: string, width: number) => void;
   onRemoveText: (id: string) => void;
+  /** Viewport position of a photo currently being dragged in from the side panel, if any. */
+  dragPosition?: { x: number; y: number } | null;
 }
 
-function computeCanvasScale() {
+// On iPad portrait / narrow screens the side panel overlays the canvas area
+// (left-4 offset + icon rail + content, see .side-panel-content in index.css).
+// Reserve that width so the canvas shrinks and shifts right instead of being
+// covered, keeping every slot reachable.
+const NARROW_BREAKPOINT = 1024;
+const SIDEBAR_RESERVE = 324;
+
+function computeCanvasLayout() {
   // py-16 = 64px top + 64px bottom padding in the flex container
   const availH = window.innerHeight - 128;
-  return Math.min(1, Math.max(0.45, availH / A4.height));
+  const reserve = window.innerWidth <= NARROW_BREAKPOINT ? SIDEBAR_RESERVE : 0;
+  const availW = window.innerWidth - reserve - 32;
+  const scale = Math.min(1, Math.max(0.45, Math.min(availH / A4.height, availW / A4.width)));
+  return { scale, paddingLeft: reserve };
 }
 
-export default function EditorCanvas({
+const EditorCanvas = forwardRef<EditorCanvasHandle, EditorCanvasProps>(function EditorCanvas({
   stageRef,
   slots, images, bgColor, bgImageUrl, decorations, showSlots,
   freeMode, freeImages,
   onDropImage, onClearSlot, onUpdateSlotCrop,
   onMoveDecoration, onRemoveDecoration, onResizeDecoration,
   onDropFreeImage, onMoveFreeImage, onResizeFreeImage, onRemoveFreeImage, onUpdateFreeImageCrop,
+  selectedImageId, onPlaceImage,
   texts, selectedTextId, onSelectText, onMoveText, onResizeText, onRemoveText,
-}: EditorCanvasProps) {
+  dragPosition,
+}, ref) {
   const bgImage = useKonvaImage(bgImageUrl ?? '');
   const divRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cropModeId, setCropModeId] = useState<string | null>(null);
-  const [scale, setScale] = useState(computeCanvasScale);
+  const [{ scale, paddingLeft }, setLayout] = useState(computeCanvasLayout);
 
   useEffect(() => {
-    function update() { setScale(computeCanvasScale()); }
+    function update() { setLayout(computeCanvasLayout()); }
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
@@ -105,47 +126,82 @@ export default function EditorCanvas({
     setCropModeId(null);
   }, [selectedId]);
 
-  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
+  useImperativeHandle(ref, () => ({
+    screenToCanvas(clientX: number, clientY: number) {
+      if (!divRef.current) return null;
+      const rect = divRef.current.getBoundingClientRect();
+      return {
+        x: (clientX - rect.left) / scale,
+        y: (clientY - rect.top) / scale,
+      };
+    },
+  }), [scale]);
+
+  // Slot under the pointer while a photo is being dragged in from the side panel,
+  // so the drop target can be highlighted.
+  const hoveredSlotId = (() => {
+    if (!dragPosition || freeMode || !divRef.current) return undefined;
+    const rect = divRef.current.getBoundingClientRect();
+    const px = (dragPosition.x - rect.left) / scale;
+    const py = (dragPosition.y - rect.top) / scale;
+    return slots.find(s => px >= s.x && px <= s.x + s.width && py >= s.y && py <= s.y + s.height)?.id;
+  })();
+
+  // Mirrors handleDrop's coordinate math — getBoundingClientRect returns
+  // visual (CSS-scaled) coords, so divide by `scale` to get Konva space.
+  // Konva's stage.getPointerPosition() doesn't translate reliably through
+  // the CSS transform for touch/tap events, so read clientX/Y directly.
+  function getCanvasPoint(e: Konva.KonvaEventObject<MouseEvent | TouchEvent>): { x: number; y: number } | null {
+    if (!divRef.current) return null;
+    const rect = divRef.current.getBoundingClientRect();
+    const evt = e.evt;
+    const point = 'changedTouches' in evt ? evt.changedTouches[0] : evt;
+    if (!point) return null;
+    return {
+      x: (point.clientX - rect.left) / scale,
+      y: (point.clientY - rect.top) / scale,
+    };
   }
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    const imageId = e.dataTransfer.getData('imageId');
-    if (!imageId || !divRef.current) return;
+  function handleStageClick(e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) {
+    if (selectedImageId) {
+      const point = getCanvasPoint(e);
+      if (point) {
+        const { x: px, y: py } = point;
 
-    const rect = divRef.current.getBoundingClientRect();
-    // getBoundingClientRect returns visual (scaled) coords — divide by scale to get Konva space
-    const px = (e.clientX - rect.left) / scale;
-    const py = (e.clientY - rect.top) / scale;
-
-    if (freeMode) {
-      onDropFreeImage(imageId, px, py);
-      return;
+        if (freeMode) {
+          onDropFreeImage(selectedImageId, px, py);
+        } else {
+          const hit = slots.find(
+            s => px >= s.x && px <= s.x + s.width && py >= s.y && py <= s.y + s.height
+          );
+          const target = hit ?? slots.find(s => !s.imageId);
+          if (target) onDropImage(target.id, selectedImageId);
+        }
+        onPlaceImage();
+        return;
+      }
     }
-
-    const hit = slots.find(
-      s => px >= s.x && px <= s.x + s.width && py >= s.y && py <= s.y + s.height
-    );
-    if (hit) onDropImage(hit.id, imageId);
+    setSelectedId(null);
+    setCropModeId(null);
+    onSelectText(null);
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen py-16">
+    <div className="flex items-center justify-center min-h-screen py-16" style={{ paddingLeft }}>
       {/* Outer div sized to the visual (scaled) canvas so flex centering accounts for it */}
       <div style={{ width: A4.width * scale, height: A4.height * scale }}>
         <div
           ref={divRef}
           className="shadow-2xl"
           style={{ width: A4.width, height: A4.height, transform: `scale(${scale})`, transformOrigin: 'top left' }}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
         >
         <Stage
           ref={stageRef}
           width={A4.width}
           height={A4.height}
-          onClick={() => { setSelectedId(null); setCropModeId(null); onSelectText(null); }}
+          onClick={handleStageClick}
+          onTap={handleStageClick}
         >
           <Layer>
             <Rect x={0} y={0} width={A4.width} height={A4.height} fill={bgColor} />
@@ -167,7 +223,8 @@ export default function EditorCanvas({
                     onCropOffset={onUpdateSlotCrop}
                   />
                 );
-              if (!showSlots) return null;
+              const isHovered = slot.id === hoveredSlotId;
+              if (!showSlots && !isHovered) return null;
               return (
                 <Rect
                   key={slot.id}
@@ -176,9 +233,9 @@ export default function EditorCanvas({
                   y={slot.y}
                   width={slot.width}
                   height={slot.height}
-                  fill="oklch(0.93 0.016 160)"
-                  stroke="oklch(0.72 0.06 160)"
-                  strokeWidth={1}
+                  fill={isHovered ? 'oklch(0.93 0.06 160)' : 'oklch(0.93 0.016 160)'}
+                  stroke={isHovered ? 'oklch(0.65 0.12 160)' : 'oklch(0.72 0.06 160)'}
+                  strokeWidth={isHovered ? 2 : 1}
                   dash={[6, 4]}
                   cornerRadius={slot.cornerRadius ?? 0}
                 />
@@ -229,4 +286,6 @@ export default function EditorCanvas({
       </div>
     </div>
   );
-}
+});
+
+export default EditorCanvas;
