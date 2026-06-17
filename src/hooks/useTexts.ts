@@ -6,13 +6,15 @@ import { generateId } from '../utils/id';
 export function useTexts() {
   const [texts, setTexts] = useState<CanvasText[]>([]);
 
-  function addText(partial: Omit<CanvasText, 'id' | 'x' | 'y'>) {
+  function addText(partial: Omit<CanvasText, 'id' | 'x' | 'y'>): string {
+    const id = generateId();
     setTexts(prev => [...prev, {
       ...partial,
-      id: generateId(),
+      id,
       x: Math.round(A4.width / 4),
       y: Math.round(A4.height / 2 - partial.fontSize),
     }]);
+    return id;
   }
 
   function moveText(id: string, x: number, y: number) {

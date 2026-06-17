@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { CanvasText } from '../../../types';
 import { TEXT_PRESETS, TEXT_COLORS, FONT_FAMILIES } from './constants';
 
@@ -9,6 +10,14 @@ interface TextTabProps {
 }
 
 export default function TextTab({ selectedText, onAddText, onUpdateText, onRemoveText }: TextTabProps) {
+  const editPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedText) {
+      editPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedText?.id]);
+
   return (
     <div className="overflow-y-auto flex-1 min-h-0">
       <div className="p-4 flex flex-col gap-2">
@@ -24,7 +33,7 @@ export default function TextTab({ selectedText, onAddText, onUpdateText, onRemov
       ))}
 
       {selectedText && (
-        <div className="mt-2 rounded-xl border border-line-strong bg-bg-soft overflow-hidden flex flex-col">
+        <div ref={editPanelRef} className="mt-2 rounded-xl border border-line-strong bg-bg-soft overflow-hidden flex flex-col">
           <div className="px-3 py-2 border-b border-line flex-shrink-0 flex items-center justify-between gap-2">
             <span className="text-[10px] font-semibold font-sans text-ink-soft tracking-widest uppercase truncate">
               Selected · "{selectedText.text.length > 22 ? selectedText.text.slice(0, 22) + '…' : selectedText.text}"

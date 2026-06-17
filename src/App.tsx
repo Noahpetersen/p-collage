@@ -158,7 +158,7 @@ function App() {
         onDragImageEnd={handleDragImageEnd}
         onDragImageCancel={handleDragImageCancel}
         selectedText={selectedText}
-        onAddText={addText}
+        onAddText={(partial) => setSelectedTextId(addText(partial))}
         onUpdateText={updateText}
         onRemoveText={handleRemoveText}
       />
