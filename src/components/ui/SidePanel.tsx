@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Template, UploadedImage, CanvasText } from '../../types';
 import { TABS, type TabId } from './side-panel/constants';
 import LayoutsTab from './side-panel/LayoutsTab';
@@ -46,6 +46,10 @@ export default function SidePanel({
 }: SidePanelProps) {
   const [tab, setTab] = useState<TabId | null>('layouts');
   const currentTab = TABS.find(t => t.id === tab);
+
+  useEffect(() => {
+    if (selectedText) setTab('text');
+  }, [selectedText?.id]);
 
   return (
     <div className="fixed left-4 top-1/2 -translate-y-1/2 z-40 flex gap-2 items-center">
